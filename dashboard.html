@@ -86,11 +86,15 @@ function loadTable(){
             if(currentFilter.barber && currentFilter.barber !== barber) return;
             if(currentFilter.date && currentFilter.date !== b.date) return;
 
+            // تحديد صباحًا أو مساءً
+            const hour = parseInt(b.time.split(":")[0]);
+            const period = hour < 12 ? "صباحًا" : "مساءً";
+
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>${barber}</td>
                 <td>${b.date}</td>
-                <td>${b.time}</td>
+                <td>${b.time} ${period}</td>
                 <td><button class="delete-btn" onclick="deleteBooking('${barber}',${index})">حذف</button></td>
             `;
             tbody.appendChild(tr);
@@ -125,7 +129,9 @@ function exportCSV(){
     let csv = "الحلاق,التاريخ,الوقت\n";
     for(const barber in bookedAppointments){
         bookedAppointments[barber].forEach(b => {
-            csv += `${barber},${b.date},${b.time}\n`;
+            const hour = parseInt(b.time.split(":")[0]);
+            const period = hour < 12 ? "صباحًا" : "مساءً";
+            csv += `${barber},${b.date},${b.time} ${period}\n`;
         });
     }
 

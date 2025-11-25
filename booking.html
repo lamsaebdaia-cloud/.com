@@ -48,20 +48,6 @@ body { margin:0; font-family:'Cairo',sans-serif; background:#111; color:#fff; }
 .booking-form .form-inner button:hover { transform:translateY(-2px); box-shadow:0 0 20px rgba(255,204,0,0.7); }
 
 footer { text-align:center; padding:20px; background:#222; margin-top:40px;}
-
-.dashboard { max-width:950px; margin:40px auto; background:#222; padding:20px; border-radius:12px; }
-.dashboard h3 { text-align:center; color:gold; margin-bottom:20px; }
-.dashboard .filter-container { text-align:center; margin-bottom:10px; }
-.dashboard select, .dashboard input { padding:5px; border-radius:5px; border:none; margin:0 5px; }
-.dashboard .export-btn { background:gold; color:#111; font-weight:bold; margin-bottom:10px; padding:8px 15px; border:none; border-radius:6px; cursor:pointer; }
-.booking-card { background:#222; border:2px solid #444; border-radius:12px; padding:15px; width:220px; text-align:center; box-shadow:0 0 10px rgba(255,204,0,0.2); position:relative; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
-.booking-card:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 20px gold; }
-.booking-card h4 { margin:5px 0; transition: text-shadow 0.3s ease; }
-.booking-card:hover h4 { text-shadow: 0 0 10px gold; }
-.booking-card .delete-btn { position:absolute; top:5px; right:5px; background:#900; color:#fff; padding:5px 8px; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; transition: background 0.3s ease; }
-.booking-card .delete-btn:hover { background:#c00; }
-#bookingCards { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; margin-top:20px; }
-@media (max-width:600px){ #bookingCards { flex-direction:column; align-items:center; } .booking-card { width:90%; } }
 </style>
 </head>
 <body>
@@ -105,28 +91,7 @@ footer { text-align:center; padding:20px; background:#222; margin-top:40px;}
 
         <button onclick="sendBooking()">إرسال الحجز للحلاق</button>
         <button type="button" id="autoSelectBtn" style="margin-top:10px; background:#1E90FF; color:#fff;">اختر الاقتراح تلقائيًا</button>
-        <button onclick="resetBookings()" style="margin-top:15px;background:#900;color:#fff;">حذف جميع الحجوزات</button>
     </div>
-</div>
-
-<div class="dashboard">
-    <h3>لوحة الحجوزات</h3>
-    <div class="filter-container">
-        <label>الحلاق:</label>
-        <select id="filterBarber">
-            <option value="">الكل</option>
-            <option value="السيد">السيد</option>
-            <option value="محمد">محمد</option>
-            <option value="عبدالله">عبدالله</option>
-            <option value="سمير">سمير</option>
-        </select>
-        <label>التاريخ:</label>
-        <input type="date" id="filterDate">
-        <button onclick="applyFilter()">تصفية</button>
-        <button onclick="clearFilter()">إلغاء التصفية</button>
-    </div>
-    <button class="export-btn" onclick="exportCSV()">تصدير CSV</button>
-    <div id="bookingCards"></div>
 </div>
 
 <footer>جميع الحقوق محفوظة © صالون لمسة إبداعية</footer>
@@ -142,7 +107,6 @@ menuToggle.addEventListener('click',()=>navLinks.classList.toggle('show'));
 let selectedBarber="";
 let selectedTime="";
 let bookedAppointments = { "السيد": [], "محمد": [], "عبدالله": [], "سمير": [] };
-let currentFilter = { barber:"", date:"" };
 
 // تحميل وحفظ البيانات
 function loadBookingsFromStorage() {
@@ -152,7 +116,15 @@ function loadBookingsFromStorage() {
 function saveBookingsToStorage() { localStorage.setItem("barberBookings", JSON.stringify(bookedAppointments)); }
 loadBookingsFromStorage();
 
-// توليد المواعيد من 08:30 صباحًا حتى 02:00 صباح اليوم التالي
+// ======= ضبط الحد الأدنى للتاريخ على اليوم الحالي =======
+const bookingDateInput = document.getElementById("booking-date");
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+bookingDateInput.min = `${yyyy}-${mm}-${dd}`;
+
+// توليد المواعيد
 function generateTimeSlots(){
     const slots = [];
     for(let h=8; h<24; h++){
@@ -175,7 +147,6 @@ function highlightTimeSlots(){
         slotDiv.textContent=time;
         slotDiv.classList.add("slot");
         const isBooked = bookedAppointments[selectedBarber].some(b=>b.date===bookingDate && b.time===time);
-        // تلوين حسب الوقت
         const hour=parseInt(time.split(":")[0]);
         if(hour >= 8 && hour < 12) slotDiv.style.background = "#FFE4B5";
         else if(hour >= 12 && hour < 18) slotDiv.style.background = "#FFD700";
@@ -203,7 +174,7 @@ document.querySelectorAll('.barber-card').forEach(card=>{
 });
 
 // تغيير التاريخ
-document.getElementById("booking-date").addEventListener("change", ()=>{
+bookingDateInput.addEventListener("change", ()=>{
     selectedTime="";
     highlightTimeSlots();
 });
@@ -244,10 +215,9 @@ function sendBooking(){
 
     bookedAppointments[selectedBarber].push({ date: bookingDate, time: selectedTime });
     saveBookingsToStorage();
-    loadTable();
     highlightTimeSlots();
 
-    const barberPhones={"السيد":"966548840672","محمد":"966565441337","عبدالله":"966546220113","سمير":"966543077867"};
+    const barberPhones={"السيد":"966548840672","محمد":"966565441337","عبدالله":"966546220113","سمير":"966548840672"};
     const message=`صالون لمسة إبداعية - حجز موعد
 
 الاسم: ${name}
@@ -269,79 +239,8 @@ function sendBooking(){
     highlightTimeSlots();
 }
 
-// ======= إدارة Dashboard =======
-function loadTable(){
-    const container=document.getElementById("bookingCards");
-    container.innerHTML="";
-    const colors = { "السيد":"#FFD700", "محمد":"#00BFFF", "عبدالله":"#32CD32", "سمير":"#FF69B4" };
-    Object.keys(bookedAppointments).forEach(barber=>{
-        bookedAppointments[barber].forEach((b,index)=>{
-            if(currentFilter.barber && currentFilter.barber!==barber) return;
-            if(currentFilter.date && currentFilter.date!==b.date) return;
-            const card = document.createElement("div");
-            card.classList.add("booking-card");
-            let hour=parseInt(b.time.split(":")[0]);
-            let bgColor="#444"; 
-            if(hour >= 8 && hour < 12) bgColor="#FFE4B5";
-            else if(hour >= 12 && hour < 18) bgColor="#FFD700";
-            else if(hour >= 18 && hour < 24) bgColor="#FF8C00";
-            else if(hour >= 0 && hour < 2) bgColor="#4B0082";
-            card.style.borderColor = colors[barber] || "#fff";
-            card.style.background = bgColor;
-            card.style.color = (hour >=18 || hour<2) ? "#fff" : "#111";
-            card.innerHTML=`
-                <button class="delete-btn" onclick="deleteBooking('${barber}',${index})">حذف</button>
-                <h4 style="color:${colors[barber]};">${barber}</h4>
-                <p>التاريخ: ${b.date}</p>
-                <p>الوقت: ${b.time}</p>
-            `;
-            container.appendChild(card);
-        });
-    });
-}
-
-function deleteBooking(barber,index){
-    bookedAppointments[barber].splice(index,1);
-    saveBookingsToStorage();
-    loadTable();
-    highlightTimeSlots();
-}
-
-function applyFilter(){
-    currentFilter.barber = document.getElementById("filterBarber").value;
-    currentFilter.date = document.getElementById("filterDate").value;
-    loadTable();
-}
-
-function clearFilter(){
-    currentFilter = { barber:"", date:"" };
-    document.getElementById("filterBarber").value="";
-    document.getElementById("filterDate").value="";
-    loadTable();
-}
-
-function exportCSV(){
-    let csv="الاسم,رقم الجوال,الحلاق,التاريخ,الوقت\n";
-    Object.keys(bookedAppointments).forEach(barber=>{
-        bookedAppointments[barber].forEach(b=>{
-            csv+=`?, ?, ${barber}, ${b.date}, ${b.time}\n`;
-        });
-    });
-    const blob = new Blob([csv],{type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download="bookings.csv";
-    a.click();
-}
-
 // إعادة تحميل الواجهة
-loadTable();
 highlightTimeSlots();
-
-// ======= زر إعادة ضبط الحجوزات الكاملة (اختياري) =======
-function resetBookings(){ if(confirm("هل تريد حذف جميع الحجوزات؟")){ bookedAppointments = { "السيد": [], "محمد": [], "عبدالله": [], "سمير": [] }; saveBookingsToStorage(); loadTable(); highlightTimeSlots(); } }
-
 </script>
 </body>
 </html>

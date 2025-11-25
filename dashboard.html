@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>لوحة الحجوزات</title>
+<style>
+body { font-family:Cairo, sans-serif; padding:20px; background:#111; color:#fff; }
+.table-container { max-width:900px; margin:auto; }
+h2{ text-align:center; color:gold; }
+table { width:100%; border-collapse:collapse; margin-top:20px; background:#222; }
+th, td { padding:10px; border-bottom:1px solid #333; text-align:center; }
+th { color:gold; }
+button { padding:5px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
+.delete-btn { background:#900; color:#fff; }
+.export-btn { background:gold; color:#111; font-weight:bold; margin-bottom:10px; }
+.filter-container { text-align:center; margin-bottom:10px; }
+select, input { padding:5px; border-radius:5px; border:none; margin:0 5px; }
+</style>
+</head>
+<body>
+
+<h2>سجل الحجوزات</h2>
+
+<div class="filter-container">
+    <label>الحلاق:</label>
+    <select id="filterBarber">
+        <option value="">الكل</option>
+        <option value="السيد">السيد</option>
+        <option value="محمد">محمد</option>
+        <option value="عبدالله">عبدالله</option>
+        <option value="سمير">سمير</option>
+    </select>
+
+    <label>التاريخ:</label>
+    <input type="date" id="filterDate">
+
+    <button onclick="applyFilter()">تصفية</button>
+    <button onclick="clearFilter()">إلغاء التصفية</button>
+</div>
+
+<button class="export-btn" onclick="exportCSV()">تصدير كملف CSV</button>
+
+<div class="table-container">
+    <table id="bookingTable">
+        <thead>
+            <tr>
+                <th>الحلاق</th>
+                <th>التاريخ</th>
+                <th>الوقت</th>
+                <th>إجراء</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<script>
+let bookedAppointments = {
+    "السيد": [],
+    "محمد": [],
+    "عبدالله": [],
+    "سمير": []
+};
+
+// تحميل البيانات من LocalStorage
+function loadBookingsFromStorage() {
+    const saved = localStorage.getItem("barberBookings");
+    if(saved) bookedAppointments = JSON.parse(saved);
+}
+
+// حفظ البيانات في LocalStorage
+function saveBookingsToStorage() {
+    localStorage.setItem("barberBookings", JSON.stringify(bookedAppointments));
+}
+
+// تحميل الجدول مع إمكانية التصفية
+let currentFilter = { barber:"", date:"" };
+
+function loadTable(){
+    loadBookingsFromStorage();
+    const tbody = document.querySelector("#bookingTable tbody");
+    tbody.innerHTML = "";
+
+    for(const barber in bookedAppointments){
+        bookedAppointments[barber].forEach((b, index) => {
+            if(currentFilter.barber && currentFilter.barber !== barber) return;
+            if(currentFilter.date && currentFilter.date !== b.date) return;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${barber}</td>
+                <td>${b.date}</td>
+                <td>${b.time}</td>
+                <td><button class="delete-btn" onclick="deleteBooking('${barber}',${index})">حذف</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+// حذف حجز معين
+function deleteBooking(barber,index){
+    if(!confirm("هل أنت متأكد من حذف هذا الحجز؟")) return;
+    bookedAppointments[barber].splice(index,1);
+    saveBookingsToStorage();
+    loadTable();
+}
+
+// تصفية الجدول
+function applyFilter(){
+    currentFilter.barber = document.getElementById("filterBarber").value;
+    currentFilter.date = document.getElementById("filterDate").value;
+    loadTable();
+}
+
+function clearFilter(){
+    document.getElementById("filterBarber").value = "";
+    document.getElementById("filterDate").value = "";
+    currentFilter = { barber:"", date:"" };
+    loadTable();
+}
+
+// تصدير CSV
+function exportCSV(){
+    let csv = "الحلاق,التاريخ,الوقت\n";
+    for(const barber in bookedAppointments){
+        bookedAppointments[barber].forEach(b => {
+            csv += `${barber},${b.date},${b.time}\n`;
+        });
+    }
+
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "bookings.csv";
+    link.click();
+}
+
+loadTable();
+</script>
+
+</body>
+</html>

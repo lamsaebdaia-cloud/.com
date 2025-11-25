@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الحجز - صالون لمسة إبداعية</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+body { margin:0; font-family:'Cairo',sans-serif; background:#111; color:#fff; }
+.top-logo { display:flex; align-items:center; justify-content:center; gap:10px; padding:15px 0; background:#222; position:sticky; top:0; z-index:1000; box-shadow:0 2px 5px rgba(0,0,0,0.3);}
+.top-logo.shrink { padding:5px 0; }
+.top-logo .logo-img { height:60px; width:60px; border-radius:50%; object-fit:cover; transition:all 0.3s ease; box-shadow:0 4px 8px rgba(0,0,0,0.4); border:2px solid #ffcc00;}
+.top-logo.shrink .logo-img { height:40px; width:40px; }
+.top-logo .logo-text { font-size:2rem; font-weight:bold; color:#fff; transition: font-size 0.3s ease;}
+.top-logo.shrink .logo-text { font-size:1.5rem;}
+.navbar { display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:#222; position:relative; }
+.nav-links { display:flex; gap:20px; list-style:none;}
+.nav-links a { color:#fff; text-decoration:none; font-size:1rem; }
+.menu-toggle { display:none; background:none; border:none; font-size:1.5rem; color:#fff; cursor:pointer; }
+@media (max-width:768px){ .nav-links { display:none; flex-direction:column; background:#222; position:absolute; top:70px; right:0; width:200px; padding:10px; border-radius:5px; z-index:999;}
+.nav-links.show { display:flex;}
+.menu-toggle { display:block; } }
+
+.booking-form { max-width:600px; margin:40px auto; background:#222; padding:25px; border-radius:12px; box-shadow:0 0 15px rgba(255,204,0,0.2);}
+.booking-form h2 { text-align:center; color:gold; margin-bottom:20px; }
+.booking-form .form-inner { display:flex; flex-direction:column; gap:15px; padding:0 10px; box-sizing:border-box; }
+.booking-form label { text-align:right; color:gold;}
+.booking-form input, .booking-form select { width:100%; padding:10px; background:#111; border:1px solid #444; border-radius:6px; color:#fff; box-sizing:border-box;}
+
+.barbers { display:flex; justify-content:center; gap:15px; flex-wrap:wrap;}
+.barber-card { text-align:center; cursor:pointer; transition:transform 0.3s ease, box-shadow 0.3s ease;}
+.barber-card img { width:80px; height:80px; border-radius:50%; border:2px solid #444; object-fit:cover; transition:all 0.3s ease;}
+.barber-card.selected img { border-color:gold; box-shadow:0 0 15px gold;}
+.barber-card p { margin-top:5px; color:#fff;}
+
+#availability-msg { color:red; font-weight:bold; display:none; margin:0; padding:5px 0; }
+
+.timeslots { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px; }
+.slot { padding:10px 12px; border-radius:8px; cursor:pointer; color:#111; transition:0.3s; border:1px solid #444;}
+.slot.available { background:#228B22; }
+.slot.booked { background:#990000; cursor:not-allowed; position:relative; color:#fff; }
+.slot.booked:hover::after { content:"محجوز"; position:absolute; top:-25px; left:50%; transform:translateX(-50%); background:#ffcc00; color:#111; padding:3px 6px; border-radius:5px; font-size:0.75rem; white-space:nowrap; }
+.slot.selected { box-shadow:0 0 15px gold; border-color:gold; }
+.slot.suggested { border:2px dashed gold; box-shadow:0 0 10px gold; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { box-shadow:0 0 10px gold; } to { box-shadow:0 0 20px gold; } }
+
+.booking-form .form-inner button { width:100%; margin-top:20px; padding:15px; background:gold; border:none; border-radius:8px; color:#111; font-weight:bold; cursor:pointer; transition:0.3s; display:block;}
+.booking-form .form-inner button:hover { transform:translateY(-2px); box-shadow:0 0 20px rgba(255,204,0,0.7); }
+
+footer { text-align:center; padding:20px; background:#222; margin-top:40px;}
+
+.dashboard { max-width:950px; margin:40px auto; background:#222; padding:20px; border-radius:12px; }
+.dashboard h3 { text-align:center; color:gold; margin-bottom:20px; }
+.dashboard .filter-container { text-align:center; margin-bottom:10px; }
+.dashboard select, .dashboard input { padding:5px; border-radius:5px; border:none; margin:0 5px; }
+.dashboard .export-btn { background:gold; color:#111; font-weight:bold; margin-bottom:10px; padding:8px 15px; border:none; border-radius:6px; cursor:pointer; }
+.booking-card { background:#222; border:2px solid #444; border-radius:12px; padding:15px; width:220px; text-align:center; box-shadow:0 0 10px rgba(255,204,0,0.2); position:relative; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+.booking-card:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 0 20px gold; }
+.booking-card h4 { margin:5px 0; transition: text-shadow 0.3s ease; }
+.booking-card:hover h4 { text-shadow: 0 0 10px gold; }
+.booking-card .delete-btn { position:absolute; top:5px; right:5px; background:#900; color:#fff; padding:5px 8px; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; transition: background 0.3s ease; }
+.booking-card .delete-btn:hover { background:#c00; }
+#bookingCards { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; margin-top:20px; }
+@media (max-width:600px){ #bookingCards { flex-direction:column; align-items:center; } .booking-card { width:90%; } }
+</style>
+</head>
+<body>
+
+<div class="top-logo">
+    <img src="logo.jpg" alt="Logo" class="logo-img">
+    <span class="logo-text">صالون لمسة إبداعية</span>
+</div>
+
+<header class="navbar">
+    <ul class="nav-links">
+        <li><a href="index.html">الرئيسية</a></li>
+        <li><a href="services.html">الخدمات</a></li>
+        <li><a href="prices.html">الأسعار</a></li>
+        <li><a href="booking.html">الحجز</a></li>
+        <li><a href="team.html">الفريق</a></li>
+        <li><a href="contact.html">اتصل بنا</a></li>
+    </ul>
+    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+</header>
+
+<div class="booking-form">
+    <h2>احجز موعدك الآن</h2>
+    <div class="form-inner">
+        <label>اسمك:</label>
+        <input type="text" id="name" placeholder="اكتب اسمك">
+        <label>رقم الجوال:</label>
+        <input type="text" id="phone" placeholder="05xxxxxxxx">
+        <label>اختر الحلاق:</label>
+        <div class="barbers">
+            <div class="barber-card" data-name="السيد"><img src="e.jpg" alt="السيد"><p>السيد</p></div>
+            <div class="barber-card" data-name="محمد"><img src="m.jpg" alt="محمد"><p>محمد</p></div>
+            <div class="barber-card" data-name="عبدالله"><img src="a.jpg" alt="عبدالله"><p>عبدالله</p></div>
+            <div class="barber-card" data-name="سمير"><img src="s.jpg" alt="سمير"><p>سمير</p></div>
+        </div>
+        <label>اختر التاريخ:</label>
+        <input type="date" id="booking-date" required>
+        <label>اختر الموعد:</label>
+        <div class="timeslots" id="timeslots"></div>
+        <p id="availability-msg">هذا الوقت محجوز، يرجى اختيار وقت آخر</p>
+
+        <button onclick="sendBooking()">إرسال الحجز للحلاق</button>
+        <button type="button" id="autoSelectBtn" style="margin-top:10px; background:#1E90FF; color:#fff;">اختر الاقتراح تلقائيًا</button>
+        <button onclick="resetBookings()" style="margin-top:15px;background:#900;color:#fff;">حذف جميع الحجوزات</button>
+    </div>
+</div>
+
+<div class="dashboard">
+    <h3>لوحة الحجوزات</h3>
+    <div class="filter-container">
+        <label>الحلاق:</label>
+        <select id="filterBarber">
+            <option value="">الكل</option>
+            <option value="السيد">السيد</option>
+            <option value="محمد">محمد</option>
+            <option value="عبدالله">عبدالله</option>
+            <option value="سمير">سمير</option>
+        </select>
+        <label>التاريخ:</label>
+        <input type="date" id="filterDate">
+        <button onclick="applyFilter()">تصفية</button>
+        <button onclick="clearFilter()">إلغاء التصفية</button>
+    </div>
+    <button class="export-btn" onclick="exportCSV()">تصدير CSV</button>
+    <div id="bookingCards"></div>
+</div>
+
+<footer>جميع الحقوق محفوظة © صالون لمسة إبداعية</footer>
+
+<script>
+// ======= إعدادات عامة =======
+const topLogo=document.querySelector('.top-logo');
+window.addEventListener('scroll',()=>{topLogo.classList.toggle('shrink',window.scrollY>50);});
+const menuToggle=document.querySelector('.menu-toggle');
+const navLinks=document.querySelector('.nav-links');
+menuToggle.addEventListener('click',()=>navLinks.classList.toggle('show'));
+
+let selectedBarber="";
+let selectedTime="";
+let bookedAppointments = { "السيد": [], "محمد": [], "عبدالله": [], "سمير": [] };
+let currentFilter = { barber:"", date:"" };
+
+// تحميل وحفظ البيانات
+function loadBookingsFromStorage() {
+    const saved = localStorage.getItem("barberBookings");
+    if(saved) bookedAppointments = JSON.parse(saved);
+}
+function saveBookingsToStorage() { localStorage.setItem("barberBookings", JSON.stringify(bookedAppointments)); }
+loadBookingsFromStorage();
+
+// توليد المواعيد من 08:30 صباحًا حتى 02:00 صباح اليوم التالي
+function generateTimeSlots(){
+    const slots = [];
+    for(let h=8; h<24; h++){
+        if(h===8){ slots.push(`08:30`); } 
+        else { slots.push(`${h.toString().padStart(2,'0')}:00`); slots.push(`${h.toString().padStart(2,'0')}:30`); }
+    }
+    for(let h=0; h<2; h++){ slots.push(`0${h}:00`); slots.push(`0${h}:30`); }
+    return slots;
+}
+
+// ======= تحديث واجهة المواعيد =======
+function highlightTimeSlots(){
+    const container = document.getElementById("timeslots");
+    container.innerHTML="";
+    if(!selectedBarber) return;
+    const slots = generateTimeSlots();
+    const bookingDate = document.getElementById("booking-date").value;
+    slots.forEach(time=>{
+        const slotDiv=document.createElement("div");
+        slotDiv.textContent=time;
+        slotDiv.classList.add("slot");
+        const isBooked = bookedAppointments[selectedBarber].some(b=>b.date===bookingDate && b.time===time);
+        // تلوين حسب الوقت
+        const hour=parseInt(time.split(":")[0]);
+        if(hour >= 8 && hour < 12) slotDiv.style.background = "#FFE4B5";
+        else if(hour >= 12 && hour < 18) slotDiv.style.background = "#FFD700";
+        else if(hour >= 18 && hour < 24) slotDiv.style.background = "#FF8C00";
+        else if(hour >=0 && hour <2) slotDiv.style.background = "#4B0082";
+        slotDiv.style.color = (hour >=18 || hour<2) ? "#fff" : "#111";
+
+        if(isBooked){ slotDiv.classList.add("booked"); slotDiv.addEventListener("click",()=>{ alert("هذا الوقت محجوز بالفعل، يرجى اختيار وقت آخر"); }); }
+        else { slotDiv.classList.add("available"); slotDiv.addEventListener("click",()=>{ document.querySelectorAll('.slot').forEach(s=>s.classList.remove("selected")); slotDiv.classList.add("selected"); selectedTime=time; document.getElementById("availability-msg").style.display="none"; }); }
+        container.appendChild(slotDiv);
+    });
+    suggestNextAvailable();
+}
+
+// ======= اختيار الحلاق =======
+document.querySelectorAll('.barber-card').forEach(card=>{
+    card.addEventListener('click',()=>{
+        document.querySelectorAll('.barber-card').forEach(c=>c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedBarber=card.dataset.name;
+        selectedTime="";
+        highlightTimeSlots();
+        document.getElementById("availability-msg").style.display="none";
+    });
+});
+
+// تغيير التاريخ
+document.getElementById("booking-date").addEventListener("change", ()=>{
+    selectedTime="";
+    highlightTimeSlots();
+});
+
+// ======= اقتراح أقرب موعد =======
+function suggestNextAvailable() {
+    if(!selectedBarber) return;
+    const bookingDate = document.getElementById("booking-date").value;
+    if(!bookingDate) return;
+    const slots = generateTimeSlots();
+    for(const time of slots){
+        const isBooked = bookedAppointments[selectedBarber].some(b=>b.date===bookingDate && b.time===time);
+        if(!isBooked){
+            document.querySelectorAll('.slot').forEach(s=>s.classList.remove("suggested"));
+            const slotDiv = Array.from(document.querySelectorAll('.slot')).find(s=>s.textContent===time);
+            if(slotDiv){ slotDiv.classList.add("suggested"); }
+            break;
+        }
+    }
+}
+
+// ======= زر اختيار الاقتراح تلقائيًا =======
+document.getElementById("autoSelectBtn").addEventListener("click", ()=>{
+    const suggested = document.querySelector(".slot.suggested");
+    if(suggested){ document.querySelectorAll('.slot').forEach(s=>s.classList.remove("selected")); suggested.classList.add("selected"); selectedTime = suggested.textContent; document.getElementById("availability-msg").style.display="none"; alert(`تم اختيار الموعد المقترح: ${selectedTime}`); }
+    else{ alert("لا يوجد موعد مقترح متاح لهذا اليوم."); }
+});
+
+// ======= إرسال الحجز =======
+function sendBooking(){
+    const name=document.getElementById("name").value.trim();
+    const phone=document.getElementById("phone").value.trim();
+    const bookingDate = document.getElementById("booking-date").value;
+    if(!name || !phone || !selectedBarber || !selectedTime || !bookingDate){ alert("يرجى تعبئة جميع الحقول واختيار الحلاق والتاريخ والموعد"); return; }
+    const phoneRegex=/^05\d{8}$/;
+    if(!phoneRegex.test(phone)){ alert("يرجى إدخال رقم جوال صحيح يبدأ بـ 05 ويتكون من 10 أرقام"); return; }
+    if(!confirm("سيتم إرسال الحجز للحلاق عبر واتساب. هل تريد المتابعة؟")) return;
+
+    bookedAppointments[selectedBarber].push({ date: bookingDate, time: selectedTime });
+    saveBookingsToStorage();
+    loadTable();
+    highlightTimeSlots();
+
+    const barberPhones={"السيد":"966548840672","محمد":"966565441337","عبدالله":"966546220113","سمير":"966543077867"};
+    const message=`صالون لمسة إبداعية - حجز موعد
+
+الاسم: ${name}
+رقم الجوال: ${phone}
+التاريخ: ${bookingDate}
+الوقت: ${selectedTime}
+الحلاق: *${selectedBarber}*
+
+شكراً لاختيارك صالون لمسة إبداعية - فرع الضاحي
+
+📍 موقعنا على الخريطة: https://maps.app.goo.gl/DfD9iBAcELh5crNk7`;
+
+    const barberPhone=barberPhones[selectedBarber];
+    window.open(`https://wa.me/${barberPhone}?text=${encodeURIComponent(message)}`,'_blank');
+    alert("تم إرسال الحجز بنجاح!");
+    document.getElementById("name").value="";
+    document.getElementById("phone").value="";
+    selectedTime="";
+    highlightTimeSlots();
+}
+
+// ======= إدارة Dashboard =======
+function loadTable(){
+    const container=document.getElementById("bookingCards");
+    container.innerHTML="";
+    const colors = { "السيد":"#FFD700", "محمد":"#00BFFF", "عبدالله":"#32CD32", "سمير":"#FF69B4" };
+    Object.keys(bookedAppointments).forEach(barber=>{
+        bookedAppointments[barber].forEach((b,index)=>{
+            if(currentFilter.barber && currentFilter.barber!==barber) return;
+            if(currentFilter.date && currentFilter.date!==b.date) return;
+            const card = document.createElement("div");
+            card.classList.add("booking-card");
+            let hour=parseInt(b.time.split(":")[0]);
+            let bgColor="#444"; 
+            if(hour >= 8 && hour < 12) bgColor="#FFE4B5";
+            else if(hour >= 12 && hour < 18) bgColor="#FFD700";
+            else if(hour >= 18 && hour < 24) bgColor="#FF8C00";
+            else if(hour >= 0 && hour < 2) bgColor="#4B0082";
+            card.style.borderColor = colors[barber] || "#fff";
+            card.style.background = bgColor;
+            card.style.color = (hour >=18 || hour<2) ? "#fff" : "#111";
+            card.innerHTML=`
+                <button class="delete-btn" onclick="deleteBooking('${barber}',${index})">حذف</button>
+                <h4 style="color:${colors[barber]};">${barber}</h4>
+                <p>التاريخ: ${b.date}</p>
+                <p>الوقت: ${b.time}</p>
+            `;
+            container.appendChild(card);
+        });
+    });
+}
+
+function deleteBooking(barber,index){
+    bookedAppointments[barber].splice(index,1);
+    saveBookingsToStorage();
+    loadTable();
+    highlightTimeSlots();
+}
+
+function applyFilter(){
+    currentFilter.barber = document.getElementById("filterBarber").value;
+    currentFilter.date = document.getElementById("filterDate").value;
+    loadTable();
+}
+
+function clearFilter(){
+    currentFilter = { barber:"", date:"" };
+    document.getElementById("filterBarber").value="";
+    document.getElementById("filterDate").value="";
+    loadTable();
+}
+
+function exportCSV(){
+    let csv="الاسم,رقم الجوال,الحلاق,التاريخ,الوقت\n";
+    Object.keys(bookedAppointments).forEach(barber=>{
+        bookedAppointments[barber].forEach(b=>{
+            csv+=`?, ?, ${barber}, ${b.date}, ${b.time}\n`;
+        });
+    });
+    const blob = new Blob([csv],{type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="bookings.csv";
+    a.click();
+}
+
+// إعادة تحميل الواجهة
+loadTable();
+highlightTimeSlots();
+
+// ======= زر إعادة ضبط الحجوزات الكاملة (اختياري) =======
+function resetBookings(){ if(confirm("هل تريد حذف جميع الحجوزات؟")){ bookedAppointments = { "السيد": [], "محمد": [], "عبدالله": [], "سمير": [] }; saveBookingsToStorage(); loadTable(); highlightTimeSlots(); } }
+
+</script>
+</body>
+</html>

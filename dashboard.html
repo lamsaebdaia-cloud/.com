@@ -2,50 +2,166 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>لوحة الحجوزات</title>
+<title>لوحة الحجوزات الاحترافية - صالون لمسة إبداعية</title>
+
+<!-- SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
 <style>
-body { font-family:Cairo, sans-serif; padding:20px; background:#111; color:#fff; }
-.table-container { max-width:900px; margin:auto; }
-h2{ text-align:center; color:gold; }
-table { width:100%; border-collapse:collapse; margin-top:20px; background:#222; }
-th, td { padding:10px; border-bottom:1px solid #333; text-align:center; }
-th { color:gold; }
-button { padding:5px 10px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
-.delete-btn { background:#900; color:#fff; }
-.export-btn { background:gold; color:#111; font-weight:bold; margin-bottom:10px; }
-.filter-container { text-align:center; margin-bottom:10px; }
-select, input { padding:5px; border-radius:5px; border:none; margin:0 5px; }
+body {
+    font-family: 'Cairo', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #111;
+    color: #fff;
+}
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #1a1a1a;
+    border-radius: 15px;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+}
+h2 {
+    text-align: center;
+    color: gold;
+    margin-bottom: 25px;
+    font-size: 2.2rem;
+    text-shadow: 0 0 10px gold;
+}
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+select, input[type="date"], input[type="text"] {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.95rem;
+    min-width: 150px;
+    background: #222;
+    color: #fff;
+}
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px gold;
+}
+.btn-filter { background: #008cff; color: #fff; }
+.btn-clear { background: #555; color: #fff; }
+.btn-excel { background: gold; color: #111; }
+.btn-delete { background: #b50000; color: #fff; }
+
+.import-box {
+    margin-top: 10px;
+    text-align: center;
+}
+#importFile {
+    padding: 8px;
+    border-radius: 8px;
+    background: #222;
+    color: #fff;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.95rem;
+    background: #222;
+}
+thead th {
+    background: #1c1c1c;
+    color: gold;
+    padding: 14px 10px;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 0 5px gold;
+}
+tbody td {
+    padding: 12px 10px;
+    text-align: center;
+    border-bottom: 1px solid #333;
+}
+tbody tr {
+    transition: all 0.3s ease;
+}
+tbody tr:hover {
+    background: rgba(255, 215, 0, 0.15);
+}
+.row-old { background: #3a0000; }
+.row-today { background: #2d2a00; }
+.row-future { background: #003a00; }
+
+#search {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    min-width: 200px;
+    background: #222;
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .controls { flex-direction: column; gap: 10px; align-items: center; }
+    select, input, button { min-width: 100%; }
+}
 </style>
 </head>
 <body>
 
-<h2>سجل الحجوزات</h2>
+<div class="container">
+    <h2>📋 لوحة الحجوزات الاحترافية</h2>
 
-<div class="filter-container">
-    <label>الحلاق:</label>
-    <select id="filterBarber">
-        <option value="">الكل</option>
-        <option value="السيد">السيد</option>
-        <option value="محمد">محمد</option>
-        <option value="عبدالله">عبدالله</option>
-        <option value="سمير">سمير</option>
-    </select>
+    <div class="controls">
+        <select id="filterBarber">
+            <option value="">كل الحلاقين</option>
+            <option value="السيد">السيد</option>
+            <option value="محمد">محمد</option>
+            <option value="عبدالله">عبدالله</option>
+            <option value="سمير">سمير</option>
+        </select>
 
-    <label>التاريخ:</label>
-    <input type="date" id="filterDate">
+        <input type="date" id="filterDate">
+        <button class="btn-filter" onclick="applyFilter()">تصفية</button>
+        <button class="btn-clear" onclick="clearFilter()">إلغاء</button>
+    </div>
 
-    <button onclick="applyFilter()">تصفية</button>
-    <button onclick="clearFilter()">إلغاء التصفية</button>
-</div>
+    <div class="controls">
+        <input type="text" id="search" placeholder="🔍 بحث بالاسم أو الجوال" oninput="loadTable()">
+        <button class="btn-delete" onclick="deleteAll()">🗑 حذف الكل</button>
+        <button class="btn-excel" onclick="exportExcel()">📁 تصدير Excel</button>
+    </div>
 
-<button class="export-btn" onclick="exportCSV()">تصدير كملف CSV</button>
+    <div class="import-box">
+        <label>📥 استيراد Excel: </label>
+        <input type="file" id="importFile" onchange="importExcel()">
+    </div>
 
-<div class="table-container">
     <table id="bookingTable">
         <thead>
             <tr>
+                <th>#</th>
+                <th>اسم العميل</th>
+                <th>رقم الجوال</th>
                 <th>الحلاق</th>
                 <th>التاريخ</th>
+                <th>اليوم</th>
                 <th>الوقت</th>
                 <th>إجراء</th>
             </tr>
@@ -56,91 +172,153 @@ select, input { padding:5px; border-radius:5px; border:none; margin:0 5px; }
 
 <script>
 let bookedAppointments = {
-    "السيد": [],
-    "محمد": [],
-    "عبدالله": [],
-    "سمير": []
+    "السيد": [], "محمد": [], "عبدالله": [], "سمير": []
 };
 
-// تحميل البيانات من LocalStorage
+// تحميل وحفظ البيانات
 function loadBookingsFromStorage() {
     const saved = localStorage.getItem("barberBookings");
     if(saved) bookedAppointments = JSON.parse(saved);
 }
+function saveBookings() { localStorage.setItem("barberBookings", JSON.stringify(bookedAppointments)); }
 
-// حفظ البيانات في LocalStorage
-function saveBookingsToStorage() {
-    localStorage.setItem("barberBookings", JSON.stringify(bookedAppointments));
-}
-
-// تحميل الجدول مع إمكانية التصفية
 let currentFilter = { barber:"", date:"" };
 
+// دالة للحصول على اليوم بالعربية
+function getDayName(dateString){
+    const days = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+    const d = new Date(dateString + "T00:00:00");
+    return days[d.getDay()];
+}
+
+// تحميل وعرض الجدول
 function loadTable(){
     loadBookingsFromStorage();
+    for(const barber in bookedAppointments){
+        bookedAppointments[barber].sort((a,b) => (b.date + b.time) > (a.date + a.time) ? 1 : -1);
+    }
+
     const tbody = document.querySelector("#bookingTable tbody");
     tbody.innerHTML = "";
 
+    const searchQuery = (document.getElementById("search")?.value || "").trim().toLowerCase();
+    let rowCounter = 1;
+    const today = new Date().toISOString().split("T")[0];
+
     for(const barber in bookedAppointments){
-        bookedAppointments[barber].forEach((b, index) => {
+        bookedAppointments[barber].forEach((b,index) => {
             if(currentFilter.barber && currentFilter.barber !== barber) return;
             if(currentFilter.date && currentFilter.date !== b.date) return;
+            if(searchQuery && !(`${b.name} ${b.phone}`.toLowerCase().includes(searchQuery))) return;
 
-            // تحديد صباحًا أو مساءً
+            let rowClass = "";
+            if(b.date < today) rowClass = "row-old";
+            else if(b.date === today) rowClass = "row-today";
+            else rowClass = "row-future";
+
             const hour = parseInt(b.time.split(":")[0]);
-            const period = hour < 12 ? "صباحًا" : "مساءً";
+            const period = hour < 12 ? "صباحاً" : "مساءً";
+            const dayName = getDayName(b.date);
 
             const tr = document.createElement("tr");
+            tr.className = rowClass;
             tr.innerHTML = `
+                <td>${rowCounter++}</td>
+                <td>${b.name}</td>
+                <td>${b.phone}</td>
                 <td>${barber}</td>
                 <td>${b.date}</td>
+                <td>${dayName}</td>
                 <td>${b.time} ${period}</td>
-                <td><button class="delete-btn" onclick="deleteBooking('${barber}',${index})">حذف</button></td>
+                <td><button class="btn-delete" onclick="deleteBooking('${barber}',${index})">حذف</button></td>
             `;
             tbody.appendChild(tr);
         });
     }
 }
 
-// حذف حجز معين
+// حذف
 function deleteBooking(barber,index){
-    if(!confirm("هل أنت متأكد من حذف هذا الحجز؟")) return;
+    if(!confirm("هل تريد حذف هذا الحجز؟")) return;
     bookedAppointments[barber].splice(index,1);
-    saveBookingsToStorage();
+    saveBookings();
     loadTable();
 }
 
-// تصفية الجدول
+// حذف الكل
+function deleteAll(){
+    if(!confirm("⚠ هل أنت متأكد من حذف جميع الحجوزات؟")) return;
+    bookedAppointments = { "السيد": [], "محمد": [], "عبدالله": [], "سمير": [] };
+    saveBookings();
+    loadTable();
+}
+
+// فلاتر
 function applyFilter(){
     currentFilter.barber = document.getElementById("filterBarber").value;
     currentFilter.date = document.getElementById("filterDate").value;
     loadTable();
 }
-
 function clearFilter(){
+    currentFilter = { barber:"", date:"" };
     document.getElementById("filterBarber").value = "";
     document.getElementById("filterDate").value = "";
-    currentFilter = { barber:"", date:"" };
     loadTable();
 }
 
-// تصدير CSV
-function exportCSV(){
-    let csv = "الحلاق,التاريخ,الوقت\n";
+// تصدير Excel
+function exportExcel(){
+    let rows = [["#","اسم العميل","رقم الجوال","الحلاق","التاريخ","اليوم","الوقت"]];
+    let counter = 1;
+
     for(const barber in bookedAppointments){
         bookedAppointments[barber].forEach(b => {
+            if(currentFilter.barber && currentFilter.barber !== barber) return;
+            if(currentFilter.date && currentFilter.date !== b.date) return;
+
             const hour = parseInt(b.time.split(":")[0]);
-            const period = hour < 12 ? "صباحًا" : "مساءً";
-            csv += `${barber},${b.date},${b.time} ${period}\n`;
+            const period = hour < 12 ? "صباحاً" : "مساءً";
+            const dayName = getDayName(b.date);
+
+            rows.push([counter++, b.name, b.phone, barber, b.date, dayName, `${b.time} ${period}`]);
         });
     }
 
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "bookings.csv";
-    link.click();
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "الحجوزات");
+    XLSX.writeFile(workbook, "الحجوزات.xlsx");
+}
+
+// استيراد Excel
+function importExcel(){
+    const input = document.getElementById("importFile");
+    const file = input.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, {type:'array'});
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        for(const row of rows){
+            if(!bookedAppointments[row["الحلاق"]]) continue;
+            bookedAppointments[row["الحلاق"]].push({
+                name: row["اسم العميل"],
+                phone: row["رقم الجوال"],
+                date: row["التاريخ"],
+                time: row["الوقت"].split(" ")[0]
+            });
+        }
+
+        saveBookings();
+        loadTable();
+        alert("تم استيراد الحجوزات بنجاح!");
+    };
+
+    reader.readAsArrayBuffer(file);
 }
 
 loadTable();
